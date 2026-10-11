@@ -50,11 +50,15 @@ function drgsUnder(pack: RulePack, adrgCode: string): DrgRule[] {
 }
 
 function nameSuggestsMcc(name: string): boolean {
-  return /MCC|严重/.test(name)
+  return !/不伴/.test(name) && /MCC|严重/.test(name)
 }
 
 function nameSuggestsCc(name: string): boolean {
-  return /伴并发症|伴合并症|CC/.test(name) && !nameSuggestsMcc(name)
+  return (
+    !/不伴/.test(name) &&
+    /伴并发症|伴合并症|CC/.test(name) &&
+    !nameSuggestsMcc(name)
+  )
 }
 
 function nameSuggestsNone(name: string, code: string): boolean {
