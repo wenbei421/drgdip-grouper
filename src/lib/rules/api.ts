@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
+import { normalizeCode } from '@/lib/engine/normalize'
 import type { CcEntry, RulePack } from '@/lib/engine/types'
 
 export interface CountsDto {
@@ -83,12 +84,31 @@ function toCcKind(kind: string): CcEntry['kind'] {
   return kind === 'MCC' ? 'MCC' : 'CC'
 }
 
+/**
+ * Synthesize virtual sets `MCC` / `CC` from the CC table (sheet has no such set ids).
+ */
+export function synthesizeMccCcSets(
+  sets: Map<string, Set<string>>,
+  ccByCode: Map<string, CcEntry>,
+): void {
+  const mcc = new Set<string>()
+  const cc = new Set<string>()
+  for (const entry of ccByCode.values()) {
+    const code = normalizeCode(entry.code)
+    if (!code) continue
+    if (entry.kind === 'MCC') mcc.add(code)
+    else cc.add(code)
+  }
+  sets.set('MCC', mcc)
+  sets.set('CC', cc)
+}
+
 /** Convert JSON-serializable DTO into engine `RulePack` (Maps / Sets). */
 export function toRulePack(dto: RulePackDto): RulePack {
   const sets = new Map<string, Set<string>>()
   for (const setId in dto.sets) {
     const codes = dto.sets[setId]
-    sets.set(setId, new Set(codes))
+    sets.set(setId, new Set(codes.map(normalizeCode)))
   }
 
   const setNames = new Map<string, Map<string, string>>()
@@ -96,7 +116,7 @@ export function toRulePack(dto: RulePackDto): RulePack {
     const inner = dto.setNames[setId]
     const nameMap = new Map<string, string>()
     for (const code in inner) {
-      nameMap.set(code, inner[code])
+      nameMap.set(normalizeCode(code), inner[code])
     }
     setNames.set(setId, nameMap)
   }
@@ -104,18 +124,21 @@ export function toRulePack(dto: RulePackDto): RulePack {
   const ccByCode = new Map<string, CcEntry>()
   for (const code in dto.ccByCode) {
     const cc = dto.ccByCode[code]
-    ccByCode.set(code, {
-      code: cc.code,
+    const norm = normalizeCode(cc.code || code)
+    ccByCode.set(norm, {
+      code: norm,
       name: cc.name,
       kind: toCcKind(cc.kind),
       excludeSet: cc.excludeSet,
     })
   }
 
+  synthesizeMccCcSets(sets, ccByCode)
+
   const excludeSets = new Map<string, Set<string>>()
   for (const setId in dto.excludeSets) {
     const codes = dto.excludeSets[setId]
-    excludeSets.set(setId, new Set(codes))
+    excludeSets.set(setId, new Set(codes.map(normalizeCode)))
   }
 
   return {

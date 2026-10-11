@@ -119,4 +119,72 @@ describe('groupCase', () => {
     expect(result.drg?.name).toMatch(/伴并发症/)
     expect(result.drg?.name).not.toMatch(/不伴/)
   })
+
+  it('maps age/sex to NL/XB and passes neonatal extras + QTSS', () => {
+    const pack: RulePack = {
+      versionId: 'ctx',
+      name: 'ctx',
+      mdcs: [{ code: 'MDCA', name: '先期', ruleExpr: '', sort: 1 }],
+      adrgs: [
+        {
+          code: 'XX1',
+          name: '新生儿门控',
+          ruleExpr: '(NL=0) and (XB=1) and (XSRTL>=29) and (QTSS in OP_FM3)',
+          mdcCode: 'MDCA',
+          sort: 1,
+        },
+      ],
+      drgs: [
+        {
+          code: 'XX19',
+          name: '命中',
+          ruleExpr: '',
+          adrgCode: 'XX1',
+          mdcCode: 'MDCA',
+          sort: 1,
+        },
+      ],
+      sets: new Map([
+        ['OP_FM3', new Set(['36.0601'])],
+        ['DI_F00', new Set(['I21.001'])],
+      ]),
+      setNames: new Map(),
+      ccByCode: new Map(),
+      excludeSets: new Map(),
+    }
+
+    const result = groupCase(
+      {
+        ZYZD: 'I21.001',
+        QTZD: [],
+        ZYSS: '',
+        QTSS: ['36.0601'],
+        sex: '1',
+        age: 0,
+        leaveType: '1',
+        extras: { XSRTL: 30, XSRTZ: 2500 },
+      },
+      pack,
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.adrg?.code).toBe('XX1')
+  })
+
+  it('warns when primary codes are absent from all code sets', () => {
+    const result = groupCase(
+      {
+        ZYZD: 'ZZZ.999',
+        QTZD: [],
+        ZYSS: '99.9999',
+        QTSS: [],
+        sex: '1',
+        age: 40,
+        leaveType: '1',
+        extras: {},
+      },
+      miniRules,
+    )
+    expect(result.warnings).toContain('编码未出现在规则集合中')
+  })
 })

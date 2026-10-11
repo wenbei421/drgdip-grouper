@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, Plus, X } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import CodeCombobox from '@/components/grouping/CodeCombobox.vue'
 import { normalizeCode } from '@/lib/engine/normalize'
@@ -13,6 +13,8 @@ const caseStore = useCaseStore()
 const rulesStore = useRulesStore()
 const { input, names, canGroup } = storeToRefs(caseStore)
 const { pack, isReady, loading } = storeToRefs(rulesStore)
+
+const forceNeonatal = ref(false)
 
 const leaveOptions = [
   { value: '1', label: '医嘱离院' },
@@ -40,6 +42,26 @@ const ageModel = computed({
   },
 })
 
+const showNeonatal = computed(
+  () => forceNeonatal.value || (input.value.age != null && input.value.age < 1),
+)
+
+function extraNum(key: string): string {
+  const v = input.value.extras[key]
+  if (v == null || v === '') return ''
+  return String(v)
+}
+
+function setExtraNum(key: string, raw: string) {
+  const t = raw.trim()
+  if (t === '') {
+    delete input.value.extras[key]
+    return
+  }
+  const n = Number(t)
+  input.value.extras[key] = Number.isNaN(n) ? t : n
+}
+
 function onPrimaryDx(code: string, name: string) {
   caseStore.setPrimaryDx(code, name)
 }
@@ -50,6 +72,10 @@ function onPrimaryProc(code: string, name: string) {
 
 function onSecondary(index: number, code: string, name: string) {
   caseStore.setSecondaryDx(index, code, name)
+}
+
+function onSecondaryProc(index: number, code: string, name: string) {
+  caseStore.setSecondaryProc(index, code, name)
 }
 
 function goRules() {
@@ -183,6 +209,54 @@ function goRules() {
         </div>
       </div>
 
+      <!-- 其他手术 -->
+      <div class="space-y-1.5">
+        <label class="text-[12px] font-medium text-zinc-700">其他手术操作</label>
+        <div class="space-y-1.5">
+          <div
+            v-for="(code, index) in input.QTSS"
+            :key="index"
+            class="group space-y-1"
+          >
+            <div class="flex items-start gap-2">
+              <div class="min-w-0 flex-1">
+                <CodeCombobox
+                  :model-value="code"
+                  :name="names.QTSS[index] ?? ''"
+                  type="OP"
+                  @update:model-value="onSecondaryProc(index, $event, '')"
+                  @update:name="names.QTSS[index] = $event"
+                  @select="onSecondaryProc(index, $event.code, $event.name)"
+                />
+              </div>
+              <button
+                type="button"
+                class="mt-1.5 text-zinc-300 transition hover:text-rose-500"
+                aria-label="移除手术"
+                @click="caseStore.removeSecondaryProc(index)"
+              >
+                <X class="size-3.5" />
+              </button>
+            </div>
+            <div
+              v-if="names.QTSS[index]"
+              class="pl-1 text-[11px] text-zinc-500"
+            >
+              {{ names.QTSS[index] }}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-zinc-300 py-1.5 text-[12px] text-zinc-500 transition hover:border-cyan-500 hover:text-cyan-600"
+            @click="caseStore.addSecondaryProc()"
+          >
+            <Plus class="size-3.5" />
+            添加手术
+          </button>
+        </div>
+      </div>
+
       <!-- 患者信息 -->
       <div class="space-y-1.5">
         <label class="text-[12px] font-medium text-zinc-700">患者信息</label>
@@ -199,7 +273,17 @@ function goRules() {
             </select>
           </div>
           <div>
-            <div class="mb-1 text-[10px] text-zinc-400">年龄</div>
+            <div class="mb-1 flex items-center justify-between text-[10px] text-zinc-400">
+              <span>年龄</span>
+              <label class="flex items-center gap-1 text-zinc-500">
+                <input
+                  v-model="forceNeonatal"
+                  type="checkbox"
+                  class="size-3 rounded border-zinc-300"
+                >
+                新生儿
+              </label>
+            </div>
             <input
               v-model="ageModel"
               type="number"
@@ -208,6 +292,28 @@ function goRules() {
               class="w-full rounded-md border border-zinc-200 px-2.5 py-1.5 text-[12px] outline-none focus:border-cyan-500"
             >
           </div>
+          <template v-if="showNeonatal">
+            <div>
+              <div class="mb-1 text-[10px] text-zinc-400">新生儿体重 (XSRTZ)</div>
+              <input
+                type="number"
+                min="0"
+                :value="extraNum('XSRTZ')"
+                class="w-full rounded-md border border-zinc-200 px-2.5 py-1.5 text-[12px] outline-none focus:border-cyan-500"
+                @input="setExtraNum('XSRTZ', ($event.target as HTMLInputElement).value)"
+              >
+            </div>
+            <div>
+              <div class="mb-1 text-[10px] text-zinc-400">新生儿日龄 (XSRTL)</div>
+              <input
+                type="number"
+                min="0"
+                :value="extraNum('XSRTL')"
+                class="w-full rounded-md border border-zinc-200 px-2.5 py-1.5 text-[12px] outline-none focus:border-cyan-500"
+                @input="setExtraNum('XSRTL', ($event.target as HTMLInputElement).value)"
+              >
+            </div>
+          </template>
           <div class="col-span-2">
             <div class="mb-1 text-[10px] text-zinc-400">离院方式</div>
             <select

@@ -271,17 +271,61 @@ class Parser {
   }
 }
 
+/**
+ * Resolve a set operand: named set id, or `{...}` literal.
+ * Literal members that match a known set id are expanded (union); otherwise treated as ICD codes.
+ */
 function resolveSet(
   node: AstNode,
   sets: Map<string, Set<string>>,
 ): Set<string> {
   if (node.type === 'set') {
-    return new Set(node.members.map(normalizeCode))
+    const out = new Set<string>()
+    for (const member of node.members) {
+      const nested = sets.get(member)
+      if (nested) {
+        for (const code of nested) out.add(normalizeCode(code))
+      } else {
+        out.add(normalizeCode(member))
+      }
+    }
+    return out
   }
   if (node.type === 'ident') {
     return sets.get(node.name) ?? new Set()
   }
   return new Set()
+}
+
+/** Context field names that may appear inside left-hand `{ZYZD, QTZD}` literals. */
+const FIELD_SET_MEMBERS = new Set(['ZYZD', 'QTZD', 'ZYSS', 'QTSS'])
+
+/**
+ * Expand `{ZYZD, QTZD}`-style literals: field names → context values; other members → codes.
+ */
+function expandLeftSetLiteral(
+  members: string[],
+  ctx: RuleContext,
+): string[] {
+  const codes: string[] = []
+  for (const member of members) {
+    if (
+      FIELD_SET_MEMBERS.has(member) &&
+      Object.prototype.hasOwnProperty.call(ctx, member)
+    ) {
+      const v = ctx[member]
+      if (Array.isArray(v)) {
+        for (const item of v) {
+          if (item) codes.push(String(item))
+        }
+      } else if (v != null && v !== '') {
+        codes.push(String(v))
+      }
+    } else {
+      codes.push(member)
+    }
+  }
+  return codes
 }
 
 function isMember(
@@ -348,16 +392,24 @@ function evalNode(
       }
 
       if (node.op === 'in' || node.op === 'not in') {
-        const leftVal = evalNode(node.left, ctx, sets, warnings)
-        if (leftVal === null) {
-          // unknown left identifier → membership false (rule forced false at top)
-          return false
-        }
         const set = resolveSet(node.right, sets)
-        const codes =
-          typeof leftVal === 'string' || Array.isArray(leftVal)
-            ? leftVal
-            : String(leftVal)
+        let codes: string | string[]
+
+        if (node.left.type === 'set') {
+          // `{ZYZD, QTZD} in DI_*` — gather codes from context fields (or literal ICD)
+          codes = expandLeftSetLiteral(node.left.members, ctx)
+        } else {
+          const leftVal = evalNode(node.left, ctx, sets, warnings)
+          if (leftVal === null) {
+            // unknown left identifier → membership false (rule forced false at top)
+            return false
+          }
+          codes =
+            typeof leftVal === 'string' || Array.isArray(leftVal)
+              ? leftVal
+              : String(leftVal)
+        }
+
         const member = isMember(codes, set)
         return node.op === 'not in' ? !member : member
       }

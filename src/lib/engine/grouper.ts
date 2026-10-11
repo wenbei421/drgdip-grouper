@@ -11,7 +11,7 @@ import type {
 } from './types'
 
 function buildContext(input: CaseInput): RuleContext {
-  return {
+  const ctx: RuleContext = {
     ZYZD: input.ZYZD,
     QTZD: input.QTZD,
     ZYSS: input.ZYSS,
@@ -21,6 +21,26 @@ function buildContext(input: CaseInput): RuleContext {
     leaveType: input.leaveType,
     ...input.extras,
   }
+
+  // Official DSL uses NL / XB; keep age/sex aliases for UI/debug.
+  if (input.age != null) {
+    ctx.NL = input.age
+  }
+  if (input.sex === '1' || input.sex === '2') {
+    ctx.XB = input.sex
+  }
+
+  return ctx
+}
+
+/** True if code appears in any named code set (MCC/CC virtual sets included). */
+function codeInAnySet(code: string, pack: RulePack): boolean {
+  const norm = normalizeCode(code)
+  if (!norm) return false
+  for (const set of pack.sets.values()) {
+    if (set.has(norm)) return true
+  }
+  return false
 }
 
 function normalizeCase(input: CaseInput): CaseInput {
@@ -135,6 +155,13 @@ export function groupCase(input: CaseInput, pack: RulePack): GroupResult {
   const warnings: string[] = []
   const trace: string[] = []
   const ccHits = collectCcHits(caseNorm.QTZD, caseNorm.ZYZD, pack)
+
+  const primaryMissing =
+    (caseNorm.ZYZD !== '' && !codeInAnySet(caseNorm.ZYZD, pack)) ||
+    (caseNorm.ZYSS !== '' && !codeInAnySet(caseNorm.ZYSS, pack))
+  if (primaryMissing) {
+    warnings.push('编码未出现在规则集合中')
+  }
 
   let lockedMdc: MdcRule | null = null
   let lockedAdrg: AdrgRule | null = null

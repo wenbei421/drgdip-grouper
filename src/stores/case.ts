@@ -105,6 +105,23 @@ export const useCaseStore = defineStore('case', () => {
     names.value.QTZD.splice(index, 1)
   }
 
+  function setSecondaryProc(index: number, code: string, name?: string) {
+    if (index < 0 || index >= input.value.QTSS.length) return
+    input.value.QTSS[index] = code
+    names.value.QTSS[index] = name ?? lookupCodeName(pack.value, code)
+  }
+
+  function addSecondaryProc(code = '', name = '') {
+    input.value.QTSS.push(code)
+    names.value.QTSS.push(name || lookupCodeName(pack.value, code))
+  }
+
+  function removeSecondaryProc(index: number) {
+    if (index < 0 || index >= input.value.QTSS.length) return
+    input.value.QTSS.splice(index, 1)
+    names.value.QTSS.splice(index, 1)
+  }
+
   function loadDemo() {
     const cc = pickDemoCc(pack.value)
     input.value = {
@@ -145,6 +162,9 @@ export const useCaseStore = defineStore('case', () => {
     setSecondaryDx,
     addSecondaryDx,
     removeSecondaryDx,
+    setSecondaryProc,
+    addSecondaryProc,
+    removeSecondaryProc,
     loadDemo,
     group,
     clearResult,

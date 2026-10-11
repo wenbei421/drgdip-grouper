@@ -293,6 +293,19 @@ pub async fn fetch_rule_pack(pool: &SqlitePool) -> Result<RulePackDto, AppError>
         );
     }
 
+    // Virtual sets used by official DSL: `QTZD in MCC` / `QTZD in {MCC, CC}`
+    let mut mcc_codes = Vec::new();
+    let mut cc_codes = Vec::new();
+    for (code, dto) in &cc_by_code {
+        match dto.kind.as_str() {
+            "MCC" => mcc_codes.push(code.clone()),
+            "CC" => cc_codes.push(code.clone()),
+            _ => {}
+        }
+    }
+    sets.insert("MCC".to_string(), mcc_codes);
+    sets.insert("CC".to_string(), cc_codes);
+
     let mut exclude_sets: HashMap<String, Vec<String>> = HashMap::new();
     let exclude_rows = sqlx::query_as::<_, (String, String)>(
         r#"
@@ -359,7 +372,7 @@ fn parse_mdc(workbook: &mut Xlsx<std::io::BufReader<std::fs::File>>) -> Result<V
         out.push(MdcRow {
             code,
             name: cell_str(row, table.col("MDC名称")?),
-            rule_expr: cell_str(row, table.col("MDC规则")?),
+            rule_expr: clean_rule_expr(&cell_str(row, table.col("MDC规则")?)),
             sort: cell_i32(row, table.col("排序")?),
         });
     }
@@ -377,7 +390,7 @@ fn parse_adrg(workbook: &mut Xlsx<std::io::BufReader<std::fs::File>>) -> Result<
         out.push(AdrgRow {
             code,
             name: cell_str(row, table.col("ADRG名称")?),
-            rule_expr: cell_str(row, table.col("ADRG规则")?),
+            rule_expr: clean_rule_expr(&cell_str(row, table.col("ADRG规则")?)),
             mdc_code: cell_str(row, table.col("所属MDC编码")?),
             sort: cell_i32(row, table.col("MDC内排序")?),
         });
@@ -396,7 +409,7 @@ fn parse_drg(workbook: &mut Xlsx<std::io::BufReader<std::fs::File>>) -> Result<V
         out.push(DrgRow {
             code,
             name: cell_str(row, table.col("DRG名称")?),
-            rule_expr: cell_str(row, table.col("DRG规则")?),
+            rule_expr: clean_rule_expr(&cell_str(row, table.col("DRG规则")?)),
             adrg_code: cell_str(row, table.col("所属ADRG编码")?),
             mdc_code: cell_str(row, table.col("所属MDC编码")?),
             sort: cell_i32(row, table.col("排序")?),
@@ -524,6 +537,11 @@ impl SheetTable {
 fn should_skip_code(code: &str) -> bool {
     let t = code.trim();
     t.is_empty() || t == "000" || t == "0000"
+}
+
+/// Strip Excel XML artifacts and CR from rule expressions.
+fn clean_rule_expr(s: &str) -> String {
+    s.replace("_x000D_", "").replace('\r', "")
 }
 
 fn cell_str(row: &[Data], idx: usize) -> String {
