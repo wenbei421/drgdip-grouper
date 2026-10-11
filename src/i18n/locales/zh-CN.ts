@@ -23,8 +23,10 @@ export default {
       inputTitle: '病例输入',
       resultTitle: '分组结果',
       loadSample: '载入示例',
-      inputPlaceholder: '病例输入区（后续实现）',
-      resultPlaceholder: '分组结果区（后续实现）',
+      inputPlaceholder: '填写病例并执行分组预演',
+      resultPlaceholder: '分组结果将显示在此',
+      rulesNotReady: '请先在规则管理导入或等待内置规则初始化',
+      runGroup: '执行分组预演',
     },
     batch: {
       empty: '后续版本提供',
