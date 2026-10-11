@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import {
-  Activity,
-  ArrowLeftRight,
   Database,
-  Download,
   Search,
 } from '@lucide/vue'
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import appIcon from '@/assets/app-icon.png'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -31,30 +30,44 @@ interface NavItem {
   icon: Component
 }
 
+/** 未实现功能（批量预演、版本对比）先不展示，路由保留以便后续启用 */
 const navItems: NavItem[] = [
   { titleKey: 'nav.single', path: '/single', icon: Search },
-  { titleKey: 'nav.batch', path: '/batch', icon: Download },
-  { titleKey: 'nav.compare', path: '/compare', icon: ArrowLeftRight },
   { titleKey: 'nav.rules', path: '/rules', icon: Database },
 ]
 
 function isActive(path: string) {
   return route.path === path
 }
+
+async function onBrandDblClick() {
+  try {
+    await getCurrentWindow().toggleMaximize()
+  } catch {
+    // ignore in browser
+  }
+}
 </script>
 
 <template>
   <Sidebar collapsible="none" class="w-56! border-r border-zinc-200 bg-white">
-    <SidebarHeader class="h-14 justify-center border-b border-zinc-200 px-4">
-      <div class="flex items-center gap-2.5">
-        <div class="flex size-7 items-center justify-center rounded-md bg-gradient-to-br from-cyan-500 to-blue-600">
-          <Activity class="size-4 text-white" :stroke-width="2.5" />
-        </div>
-        <div class="leading-tight">
-          <div class="text-[13px] font-semibold text-zinc-900">
+    <SidebarHeader
+      class="h-11 justify-center border-b border-zinc-200 px-4"
+      data-tauri-drag-region
+      @dblclick="onBrandDblClick"
+    >
+      <div class="flex items-center gap-2.5" data-tauri-drag-region>
+        <img
+          :src="appIcon"
+          alt=""
+          class="pointer-events-none size-6 shrink-0 rounded-md shadow-sm ring-1 ring-zinc-200/80"
+          data-tauri-drag-region
+        >
+        <div class="leading-tight" data-tauri-drag-region>
+          <div class="pointer-events-none text-[13px] font-semibold text-zinc-900">
             {{ t('brand.name') }}
           </div>
-          <div class="text-[10px] text-zinc-400">
+          <div class="pointer-events-none text-[10px] text-zinc-400">
             {{ t('brand.subtitle') }}
           </div>
         </div>

@@ -367,7 +367,7 @@ function evalNode(
         if (v === undefined || v === null) return ''
         return v as string | number | boolean | string[]
       }
-      warnings.push(`Unknown identifier: ${node.name}`)
+      warnings.push(`未知变量：${node.name}`)
       return null
     }
 
@@ -429,7 +429,7 @@ function evalNode(
             ? rightVal
             : toNumber(rightVal)
         if (ln === null || rn === null) {
-          warnings.push(`Cannot compare non-numeric values with ${node.op}`)
+          warnings.push(`无法用运算符「${node.op}」比较非数值`)
           return false
         }
         switch (node.op) {
@@ -446,7 +446,7 @@ function evalNode(
         }
       }
 
-      warnings.push(`Unknown operator: ${node.op}`)
+      warnings.push(`未知运算符：${node.op}`)
       return false
     }
   }
@@ -481,12 +481,12 @@ export function evaluateRule(
     const ast = new Parser(tokens).parse()
     const result = evalNode(ast, ctx, sets, warnings)
     // Unknown identifiers make the rule false even if a unary/binary would flip
-    if (warnings.some((w) => w.startsWith('Unknown identifier:'))) {
+    if (warnings.some((w) => w.startsWith('未知变量：'))) {
       return { value: false, warnings }
     }
     return { value: truthy(result), warnings }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    return { value: false, warnings: [`Parse error: ${msg}`] }
+    return { value: false, warnings: [`规则解析失败：${msg}`] }
   }
 }

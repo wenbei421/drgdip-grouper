@@ -7,8 +7,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "vite:dev": "vite dev",
+    "vite:build": "vite build",
+    "clean": "node -e \"const fs=require('fs');for (const p of ['node_modules','dist','src-tauri/target']) fs.rmSync(p,{recursive:true,force:true})\"",
     "preview": "vite preview",
     "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:build:nsis": "tauri build --bundles nsis",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "vue-tsc --noEmit"

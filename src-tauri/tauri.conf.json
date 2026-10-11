@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "drgdip-grouper",
+  "productName": "DRG-DIP分组预演工具",
   "version": "0.1.0",
   "identifier": "com.drgdip.grouper",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm vite:dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm vite:build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -14,7 +14,12 @@
       {
         "title": "DRG/DIP 3.0 分组预演工具",
         "width": 1200,
-        "height": 800
+        "height": 800,
+        "decorations": false,
+        "resizable": true,
+        "maximizable": true,
+        "minimizable": true,
+        "closable": true
       }
     ],
     "security": {

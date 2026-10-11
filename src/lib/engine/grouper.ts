@@ -1,5 +1,6 @@
 import { collectCcHits } from './cc'
 import { evaluateRule, type RuleContext } from './dsl'
+import { formatBoolZh, formatRuleZh } from './format-rule'
 import { normalizeCode } from './normalize'
 import type {
   AdrgRule,
@@ -9,6 +10,11 @@ import type {
   MdcRule,
   RulePack,
 } from './types'
+
+function labelWithName(code: string, name: string): string {
+  const n = name.trim()
+  return n ? `${code}（${n}）` : code
+}
 
 function buildContext(input: CaseInput): RuleContext {
   const ctx: RuleContext = {
@@ -111,18 +117,21 @@ function selectDrg(
     }
     const r = evaluateRule(drg.ruleExpr, ctx, pack.sets)
     warnings.push(...r.warnings)
+    const label = labelWithName(drg.code, drg.name)
     if (r.value) {
-      trace.push(`DRG ${drg.code}: ${drg.ruleExpr} → true`)
+      trace.push(`细分组 ${label}：${formatRuleZh(drg.ruleExpr)} → ${formatBoolZh(true)}`)
       return drg
     }
-    trace.push(`DRG ${drg.code}: ${drg.ruleExpr} → false`)
+    trace.push(`细分组 ${label}：${formatRuleZh(drg.ruleExpr)} → ${formatBoolZh(false)}`)
   }
 
   if (emptyRules.length === 0) return null
 
   if (emptyRules.length === 1) {
     const only = emptyRules[0]!
-    trace.push(`DRG ${only.code}: (empty rule) → true`)
+    trace.push(
+      `细分组 ${labelWithName(only.code, only.name)}：无额外条件 → 入组`,
+    )
     return only
   }
 
@@ -138,11 +147,14 @@ function selectDrg(
   if (!picked) {
     picked = emptyRules[0]!
     warnings.push(
-      `Ambiguous empty-rule DRGs under ADRG; using ${picked.code} (lowest sort)`,
+      `同一病组下存在多条无条件细分组，已按排序选用 ${picked.code}`,
     )
   }
 
-  trace.push(`DRG ${picked.code}: (empty rule / CC-MCC stratify) → true`)
+  const tier = hasMcc ? '按 MCC 分层' : hasCc ? '按 CC 分层' : '按无并发症分层'
+  trace.push(
+    `细分组 ${labelWithName(picked.code, picked.name)}：无额外条件（${tier}） → 入组`,
+  )
   return picked
 }
 
@@ -170,14 +182,17 @@ export function groupCase(input: CaseInput, pack: RulePack): GroupResult {
     const gateExpr = mdc.ruleExpr.trim()
     let gateOpen = false
 
+    const mdcLabel = labelWithName(mdc.code, mdc.name)
     if (gateExpr === '') {
       gateOpen = true
-      trace.push(`MDC ${mdc.code}: (empty gate) → enter`)
+      trace.push(`大类 ${mdcLabel}：无条件闸门 → 进入尝试下属病组`)
     } else {
       const r = evaluateRule(mdc.ruleExpr, ctx, pack.sets)
       warnings.push(...r.warnings)
       gateOpen = r.value
-      trace.push(`MDC ${mdc.code}: ${mdc.ruleExpr} → ${gateOpen}`)
+      trace.push(
+        `大类 ${mdcLabel}：${formatRuleZh(mdc.ruleExpr)} → ${formatBoolZh(gateOpen)}`,
+      )
     }
 
     if (!gateOpen) continue
@@ -186,7 +201,11 @@ export function groupCase(input: CaseInput, pack: RulePack): GroupResult {
       const r = evaluateRule(adrg.ruleExpr, ctx, pack.sets)
       warnings.push(...r.warnings)
       const hit = r.value
-      trace.push(`ADRG ${adrg.code}: ${adrg.ruleExpr || '(empty)'} → ${hit}`)
+      const adrgLabel = labelWithName(adrg.code, adrg.name)
+      const ruleText = adrg.ruleExpr.trim()
+        ? formatRuleZh(adrg.ruleExpr)
+        : '无额外条件'
+      trace.push(`病组 ${adrgLabel}：${ruleText} → ${formatBoolZh(hit)}`)
       if (hit) {
         lockedMdc = mdc
         lockedAdrg = adrg
@@ -204,7 +223,7 @@ export function groupCase(input: CaseInput, pack: RulePack): GroupResult {
       trace,
       warnings,
       failStage: 'MDC',
-      failReason: 'No MDC/ADRG matched',
+      failReason: '未匹配到任何大类或核心病组，请检查主诊断与主手术编码',
     }
   }
 
@@ -224,7 +243,7 @@ export function groupCase(input: CaseInput, pack: RulePack): GroupResult {
       trace,
       warnings,
       failStage: 'DRG',
-      failReason: 'No DRG matched under locked ADRG',
+      failReason: '已锁定核心病组，但未能确定细分组',
     }
   }
 

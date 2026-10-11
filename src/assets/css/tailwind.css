@@ -87,3 +87,24 @@
     @apply bg-zinc-50 text-zinc-900 antialiased;
   }
 }
+
+/* 无边框窗口：可拖拽区域 / 不可拖拽控件 */
+.no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] a,
+[data-tauri-drag-region] input,
+.no-drag button,
+.no-drag a,
+.no-drag input {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
