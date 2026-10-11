@@ -1,0 +1,138 @@
+{
+  "versionId": "chs-drg-3.0-slice",
+  "name": "CHS-DRG 3.0（金标切片）",
+  "mdcs": [
+    {
+      "code": "MDCA",
+      "name": "先期分组",
+      "ruleExpr": "",
+      "sort": 1
+    },
+    {
+      "code": "MDCF",
+      "name": "循环系统疾病及功能障碍",
+      "ruleExpr": "ZYZD in DI_F00",
+      "sort": 8
+    }
+  ],
+  "adrgs": [
+    {
+      "code": "FM3",
+      "name": "经皮冠状动脉支架植入",
+      "ruleExpr": "ZYSS in OP_FM3",
+      "mdcCode": "MDCF",
+      "sort": 23
+    },
+    {
+      "code": "FR1",
+      "name": "急性心肌梗死",
+      "ruleExpr": "ZYZD in DI_FR1",
+      "mdcCode": "MDCF",
+      "sort": 32
+    }
+  ],
+  "drgs": [
+    {
+      "code": "FM39",
+      "name": "经皮冠状动脉支架植入",
+      "ruleExpr": "",
+      "adrgCode": "FM3",
+      "mdcCode": "MDCF",
+      "sort": 1
+    },
+    {
+      "code": "FR19",
+      "name": "急性心肌梗死",
+      "ruleExpr": "",
+      "adrgCode": "FR1",
+      "mdcCode": "MDCF",
+      "sort": 1
+    }
+  ],
+  "sets": {
+    "DI_F00": [
+      {
+        "icdCode": "I21.001",
+        "icdName": "急性前壁心肌梗死",
+        "type": "DI"
+      },
+      {
+        "icdCode": "I21.002",
+        "icdName": "急性前侧壁心肌梗死",
+        "type": "DI"
+      }
+    ],
+    "OP_FM3": [
+      {
+        "icdCode": "36.0601",
+        "icdName": "冠状动脉药物涂层支架置入术",
+        "type": "OP"
+      },
+      {
+        "icdCode": "36.0602",
+        "icdName": "冠状动脉裸支架置入术",
+        "type": "OP"
+      },
+      {
+        "icdCode": "36.0700",
+        "icdName": "药物洗脱冠状动脉支架置入",
+        "type": "OP"
+      },
+      {
+        "icdCode": "36.0700X004",
+        "icdName": "经皮冠状动脉覆膜支架置入术",
+        "type": "OP"
+      },
+      {
+        "icdCode": "36.0701",
+        "icdName": "冠状动脉生物可吸收支架置入术",
+        "type": "OP"
+      }
+    ],
+    "DI_FR1": [
+      {
+        "icdCode": "I21.001",
+        "icdName": "急性前壁心肌梗死",
+        "type": "DI"
+      },
+      {
+        "icdCode": "I21.002",
+        "icdName": "急性前侧壁心肌梗死",
+        "type": "DI"
+      },
+      {
+        "icdCode": "I21.003",
+        "icdName": "急性前间壁心肌梗死",
+        "type": "DI"
+      }
+    ]
+  },
+  "cc": [
+    {
+      "code": "E11.101",
+      "name": "2型糖尿病性酮症酸中毒",
+      "kind": "CC",
+      "excludeSet": "EX_23"
+    }
+  ],
+  "excludeSets": {
+    "EX_23": [
+      {
+        "icdCode": "E10.000",
+        "icdName": "1型糖尿病伴有昏迷"
+      },
+      {
+        "icdCode": "E11.100X051",
+        "icdName": "2型糖尿病性酮症酸中毒和乳酸性酸中毒"
+      },
+      {
+        "icdCode": "E11.101",
+        "icdName": "2型糖尿病性酮症酸中毒"
+      }
+    ]
+  },
+  "meta": {
+    "source": "src-tauri/resources/rules/chs-drg-3.0.xlsx",
+    "note": "Subset for Vitest golden cases; not the full rule pack."
+  }
+}
