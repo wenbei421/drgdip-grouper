@@ -14,10 +14,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Apple Silicon macOS
           - platform: macos-latest
             rust-target: aarch64-apple-darwin
             args: --target aarch64-apple-darwin
 
+          # Intel macOS
           - platform: macos-15-intel
             rust-target: x86_64-apple-darwin
             args: --target x86_64-apple-darwin
@@ -82,8 +84,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: drgdip-v__VERSION__
-          releaseName: DRG/DIP 分组预演工具 v__VERSION__
-          releaseBody: 下载安装包并安装后即可离线使用。Windows 推荐 NSIS 安装程序。
+          releaseName: 'DRG/DIP Grouper v__VERSION__'
+          releaseBody: 'Offline DRG/DIP 3.0 grouping rehearsal tool. Prefer the Windows NSIS installer.'
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
