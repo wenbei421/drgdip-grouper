@@ -12,6 +12,7 @@ export default {
   topbar: {
     ruleVersion: '规则版本',
     ruleVersionPlaceholder: '尚未导入规则',
+    ruleLoadFailed: '规则加载失败',
     locale: '简体中文',
   },
   sidebar: {

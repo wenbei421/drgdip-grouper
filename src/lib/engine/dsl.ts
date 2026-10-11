@@ -141,7 +141,9 @@ class Parser {
 
   private parseOr(): AstNode {
     let left = this.parseAnd()
-    while (this.peek()?.kind === 'op' && this.peek()!.value === 'or') {
+    for (;;) {
+      const t = this.peek()
+      if (!(t?.kind === 'op' && t.value === 'or')) break
       this.advance()
       const right = this.parseAnd()
       left = { type: 'binary', op: 'or', left, right }
@@ -151,7 +153,9 @@ class Parser {
 
   private parseAnd(): AstNode {
     let left = this.parseNot()
-    while (this.peek()?.kind === 'op' && this.peek()!.value === 'and') {
+    for (;;) {
+      const t = this.peek()
+      if (!(t?.kind === 'op' && t.value === 'and')) break
       this.advance()
       const right = this.parseNot()
       left = { type: 'binary', op: 'and', left, right }
@@ -160,7 +164,8 @@ class Parser {
   }
 
   private parseNot(): AstNode {
-    if (this.peek()?.kind === 'op' && this.peek()!.value === 'not') {
+    const t = this.peek()
+    if (t?.kind === 'op' && t.value === 'not') {
       const next = this.tokens[this.pos + 1]
       // `not in` is a binary operator handled in parseComparison
       if (!(next?.kind === 'op' && next.value === 'in')) {

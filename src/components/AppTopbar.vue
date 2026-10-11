@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Separator } from '@/components/ui/separator'
+import { useRulesStore } from '@/stores/rules'
 
 const { t } = useI18n()
 const route = useRoute()
+const { summary, error, isReady } = storeToRefs(useRulesStore())
 
 const titleKeyMap: Record<string, string> = {
   single: 'nav.single',
@@ -17,6 +20,12 @@ const titleKeyMap: Record<string, string> = {
 const pageTitle = computed(() => {
   const name = typeof route.name === 'string' ? route.name : 'single'
   return t(titleKeyMap[name] ?? 'nav.single')
+})
+
+const versionLabel = computed(() => {
+  if (error.value) return t('topbar.ruleLoadFailed')
+  if (isReady.value && summary.value) return summary.value.name
+  return t('topbar.ruleVersionPlaceholder')
 })
 </script>
 
@@ -33,8 +42,9 @@ const pageTitle = computed(() => {
         <span class="text-[11px] text-zinc-500">{{ t('topbar.ruleVersion') }}</span>
         <span
           class="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-[12px] text-zinc-600"
+          :class="error ? 'border-red-200 text-red-600' : undefined"
         >
-          {{ t('topbar.ruleVersionPlaceholder') }}
+          {{ versionLabel }}
         </span>
       </div>
       <Separator orientation="vertical" class="h-5!" />
