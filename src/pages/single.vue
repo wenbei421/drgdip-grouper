@@ -17,7 +17,7 @@ const { t } = useI18n()
             class="text-[11px] font-medium text-cyan-600 hover:text-cyan-700"
             disabled
           >
-            载入示例
+            {{ t('pages.single.loadSample') }}
           </button>
         </div>
         <p class="rounded-md border border-dashed border-zinc-200 bg-zinc-50 px-3 py-8 text-center text-[13px] text-zinc-400">

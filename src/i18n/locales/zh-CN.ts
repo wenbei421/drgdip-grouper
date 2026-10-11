@@ -21,6 +21,7 @@ export default {
     single: {
       inputTitle: '病例输入',
       resultTitle: '分组结果',
+      loadSample: '载入示例',
       inputPlaceholder: '病例输入区（后续实现）',
       resultPlaceholder: '分组结果区（后续实现）',
     },
