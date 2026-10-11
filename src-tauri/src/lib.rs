@@ -1,5 +1,7 @@
+mod commands;
 mod db;
 mod error;
+mod import_drg;
 
 use db::{init_pool, AppState};
 use tauri::Manager;
@@ -20,7 +22,13 @@ pub fn run() {
             app.manage(AppState { pool });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            commands::get_active_rule_summary,
+            commands::seed_bundled_rules_if_empty,
+            commands::import_rules_from_path,
+            commands::fetch_rule_pack
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
