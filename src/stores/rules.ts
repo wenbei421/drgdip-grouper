@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import type { RulePack } from '@/lib/engine/types'
 import {
   fetchRulePack,
+  importRulesFromPath,
   seedBundledRulesIfEmpty,
   toRulePack,
   type RuleVersionSummary,
@@ -37,6 +38,25 @@ export const useRulesStore = defineStore('rules', () => {
     }
   }
 
+  /** Re-import official xlsx; refreshes summary + pack on success. */
+  async function reimportFromPath(path: string) {
+    loading.value = true
+    try {
+      const nextSummary = await importRulesFromPath(path)
+      const dto = await fetchRulePack()
+      summary.value = nextSummary
+      pack.value = toRulePack(dto)
+      error.value = null
+    } catch (e) {
+      if (!pack.value) {
+        error.value = toErrorMessage(e)
+      }
+      throw e instanceof Error ? e : new Error(toErrorMessage(e))
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     summary,
     pack,
@@ -44,5 +64,6 @@ export const useRulesStore = defineStore('rules', () => {
     error,
     isReady,
     bootstrap,
+    reimportFromPath,
   }
 })
